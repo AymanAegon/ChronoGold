@@ -1,39 +1,36 @@
-const CACHE_NAME = 'chronogold-v1';
+const CACHE_NAME = 'chronogold-v2';
 const ASSETS_TO_CACHE = [
-  './',
-  './index.html',
-  './manifest.json',
-  './icon-192.png',
-  './icon-512.png'
+  '/',
+  '/manifest.json',
+  '/icon-192.png',
+  '/icon-512.png'
 ];
 
-// Install event: cache core assets
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS_TO_CACHE);
-    })
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS_TO_CACHE))
   );
   self.skipWaiting();
 });
 
-// Activate event: clean up old caches if version changes
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((keys) => {
-      return Promise.all(
-        keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
-      );
-    })
+    caches.keys().then((keys) =>
+      Promise.all(keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key)))
+    )
   );
   self.clients.claim();
 });
 
-// Fetch event: serve from cache first, fall back to network
 self.addEventListener('fetch', (event) => {
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request).catch(() => caches.match('/'))
+    );
+    return;
+  }
+
   event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      return cachedResponse || fetch(event.request);
-    })
+    caches.match(event.request).then((cachedResponse) => cachedResponse || fetch(event.request))
   );
 });
