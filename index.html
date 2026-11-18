@@ -1,0 +1,1562 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+<title>ChronoGold — Calculateur de Temps Multi-Saut</title>
+
+<link rel="manifest" href="./manifest.json" />
+<meta name="theme-color" content="#0D0D0F" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
+<link rel="apple-touch-icon" href="./icon-192.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+/* ═══════════════════════════════════════════════════════════════
+   DESIGN TOKENS & RESET
+═══════════════════════════════════════════════════════════════ */
+:root {
+  --bg-primary:       #0D0D0F;
+  --bg-card:          #16161A;
+  --bg-card-hover:    #1A1A1F;
+  --bg-input:         #1E1E24;
+  --bg-pill:          #1A1A20;
+  --border-subtle:    #26262C;
+  --border-gold:      rgba(212,175,55,0.25);
+  --border-gold-mid:  rgba(212,175,55,0.45);
+  --text-primary:     #F4F4F6;
+  --text-secondary:   #8E8E98;
+  --text-muted:       #5C5C68;
+  --gold:             #D4AF37;
+  --gold-hover:       #E5C158;
+  --gold-glow:        rgba(212,175,55,0.18);
+  --gold-glow-hover:  rgba(229,193,88,0.28);
+  --red:              #E05454;
+  --red-muted:        rgba(224,84,84,0.15);
+  --green:            #4CAF80;
+  --green-muted:      rgba(76,175,128,0.15);
+  --blue:             #5B9BD5;
+  --shadow-card:      0 2px 16px rgba(0,0,0,0.5), 0 1px 4px rgba(0,0,0,0.3);
+  --shadow-gold:      0 0 20px rgba(212,175,55,0.12);
+  --radius-sm:        6px;
+  --radius-md:        10px;
+  --radius-lg:        14px;
+  --radius-xl:        18px;
+  --transition:       cubic-bezier(0.25,0.46,0.45,0.94);
+  --font-ui:          'Inter', system-ui, sans-serif;
+  --font-mono:        'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-ui);
+  min-height: 100vh;
+  overflow-x: hidden;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-primary); }
+::-webkit-scrollbar-thumb { background: #2E2E36; border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: var(--gold); }
+
+/* ═══════════════════════════════════════════════════════════════
+   LAYOUT
+═══════════════════════════════════════════════════════════════ */
+.app-wrapper {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 0 16px 80px;
+}
+@media (min-width: 640px)  { .app-wrapper { padding: 0 24px 80px; } }
+@media (min-width: 1024px) { .app-wrapper { padding: 0 32px 80px; } }
+
+/* ═══════════════════════════════════════════════════════════════
+   HEADER
+═══════════════════════════════════════════════════════════════ */
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px 0 20px;
+  border-bottom: 1px solid var(--border-subtle);
+  margin-bottom: 28px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.logo-mark {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logo-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, #2A2410 0%, #1A1600 100%);
+  border: 1px solid var(--border-gold-mid);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 12px rgba(212,175,55,0.15);
+  flex-shrink: 0;
+}
+.logo-icon svg { width: 18px; height: 18px; }
+
+.logo-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+.logo-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--gold);
+}
+.logo-subtitle {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+.header-time {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SECTION LABELS
+═══════════════════════════════════════════════════════════════ */
+.section-label {
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.section-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border-subtle);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   HERO
+═══════════════════════════════════════════════════════════════ */
+.hero-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xl);
+  padding: 24px 20px 20px;
+  margin-bottom: 24px;
+  box-shadow: var(--shadow-card), var(--shadow-gold);
+  position: relative;
+  overflow: hidden;
+}
+.hero-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border-gold-mid), transparent);
+}
+
+.hero-primary {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+.hero-duration {
+  font-family: var(--font-mono);
+  font-size: clamp(2.5rem, 8vw, 4rem);
+  font-weight: 600;
+  color: var(--gold);
+  line-height: 1;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 32px rgba(212,175,55,0.3);
+  transition: color 0.3s var(--transition);
+}
+.hero-duration.invalid { color: var(--text-muted); text-shadow: none; }
+
+.hero-label-block { padding-bottom: 6px; }
+.hero-label {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+.hero-sublabel {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  margin-top: 2px;
+}
+
+.hero-metrics {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-bottom: 18px;
+}
+@media (min-width: 480px) { .hero-metrics { grid-template-columns: repeat(4, 1fr); } }
+
+.metric-pill {
+  background: var(--bg-input);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  text-align: center;
+}
+.metric-value {
+  font-family: var(--font-mono);
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  display: block;
+  line-height: 1.2;
+}
+.metric-label {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-top: 3px;
+  display: block;
+}
+
+.hero-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* ═══════════════════════════════════════════════════════════════
+   BUTTONS
+═══════════════════════════════════════════════════════════════ */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-family: var(--font-ui);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background 0.18s var(--transition),
+              color 0.18s var(--transition),
+              box-shadow 0.18s var(--transition),
+              transform 0.12s var(--transition),
+              border-color 0.18s var(--transition);
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  min-height: 44px;
+  padding: 0 14px;
+  white-space: nowrap;
+}
+.btn:active { transform: scale(0.97); }
+
+.btn-gold {
+  background: var(--gold);
+  color: #0D0D0F;
+  box-shadow: 0 2px 12px rgba(212,175,55,0.25);
+}
+.btn-gold:hover { background: var(--gold-hover); box-shadow: 0 4px 20px rgba(212,175,55,0.4); }
+
+.btn-ghost {
+  background: var(--bg-input);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-subtle);
+}
+.btn-ghost:hover { background: var(--bg-card-hover); color: var(--text-primary); border-color: var(--border-gold); }
+
+.btn-outline-gold {
+  background: transparent;
+  color: var(--gold);
+  border: 1px solid var(--border-gold-mid);
+}
+.btn-outline-gold:hover { background: var(--gold-glow); box-shadow: 0 0 16px var(--gold-glow-hover); }
+
+.btn-danger {
+  background: var(--red-muted);
+  color: var(--red);
+  border: 1px solid rgba(224,84,84,0.2);
+}
+.btn-danger:hover { background: rgba(224,84,84,0.25); }
+
+.btn-sm { min-height: 32px; height: 32px; padding: 0 10px; font-size: 0.72rem; border-radius: var(--radius-sm); }
+.btn-icon { width: 32px; height: 32px; min-height: 32px; padding: 0; border-radius: var(--radius-sm); }
+
+/* ═══════════════════════════════════════════════════════════════
+   JUMP CARDS
+═══════════════════════════════════════════════════════════════ */
+.jumps-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin-bottom: 20px;
+}
+
+.jump-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 16px 16px 14px;
+  transition: border-color 0.2s var(--transition), box-shadow 0.2s var(--transition);
+  position: relative;
+  animation: slideIn 0.22s var(--transition) both;
+}
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.jump-card:focus-within {
+  border-color: var(--border-gold-mid);
+  box-shadow: 0 0 0 1px var(--border-gold), var(--shadow-card);
+}
+
+/* GAP CONNECTOR */
+.gap-connector {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 0;
+  position: relative;
+  animation: fadeIn 0.25s var(--transition) both;
+}
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+.gap-connector::before,
+.gap-connector::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(to right, transparent, var(--border-subtle));
+}
+.gap-connector::after { background: linear-gradient(to left, transparent, var(--border-subtle)); }
+
+.gap-badge {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  background: var(--bg-primary);
+  border: 1px solid var(--border-subtle);
+  border-radius: 99px;
+  padding: 3px 10px;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.03em;
+  transition: color 0.2s, border-color 0.2s;
+}
+.gap-badge.has-gap { color: var(--gold); border-color: var(--border-gold); }
+
+/* JUMP HEADER */
+.jump-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+.jump-index-badge {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--gold);
+  background: rgba(212,175,55,0.08);
+  border: 1px solid var(--border-gold);
+  border-radius: var(--radius-sm);
+  padding: 2px 7px;
+  flex-shrink: 0;
+}
+.jump-note-input {
+  flex: 1;
+  min-width: 80px;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-family: var(--font-ui);
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  transition: color 0.2s;
+}
+.jump-note-input::placeholder { color: var(--text-muted); }
+.jump-note-input:focus { color: var(--text-primary); }
+
+.jump-duration-pill {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--gold);
+  background: rgba(212,175,55,0.08);
+  border: 1px solid var(--border-gold);
+  border-radius: 99px;
+  padding: 3px 9px;
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+  transition: all 0.2s var(--transition);
+}
+.jump-duration-pill.invalid { color: var(--text-muted); background: var(--bg-input); border-color: var(--border-subtle); }
+.jump-duration-pill.overnight { color: #9B7FD4; background: rgba(155,127,212,0.1); border-color: rgba(155,127,212,0.3); }
+
+.overnight-badge {
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: #9B7FD4;
+  background: rgba(155,127,212,0.1);
+  border: 1px solid rgba(155,127,212,0.3);
+  border-radius: var(--radius-sm);
+  padding: 2px 6px;
+  flex-shrink: 0;
+}
+.jump-remove-btn { margin-left: auto; }
+
+/* TIME ROW */
+.time-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+@media (min-width: 640px) {
+  .time-row { flex-direction: row; align-items: flex-start; gap: 10px; }
+}
+
+.time-field { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+.time-field-label {
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-left: 2px;
+}
+
+.time-input-wrap { position: relative; display: flex; align-items: center; }
+
+.time-input {
+  width: 100%;
+  min-height: 44px;
+  background: var(--bg-input);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 0 36px 0 12px;
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  outline: none;
+  transition: border-color 0.2s var(--transition), box-shadow 0.2s var(--transition), background 0.2s var(--transition);
+  -webkit-appearance: none;
+  appearance: none;
+}
+.time-input::placeholder { color: var(--text-muted); font-weight: 400; font-size: 0.85rem; }
+.time-input:focus { border-color: var(--border-gold-mid); box-shadow: 0 0 0 3px var(--gold-glow); background: #222228; }
+.time-input.error { border-color: rgba(224,84,84,0.5); box-shadow: 0 0 0 3px rgba(224,84,84,0.08); }
+.time-input.valid { border-color: rgba(76,175,128,0.3); }
+
+.time-picker-btn {
+  position: absolute;
+  right: 0; top: 0; bottom: 0;
+  width: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted);
+  transition: color 0.15s;
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  -webkit-tap-highlight-color: transparent;
+}
+.time-picker-btn:hover { color: var(--gold); }
+
+.time-picker-native-wrap {
+  position: absolute;
+  right: 0; top: 0; bottom: 0;
+  width: 36px;
+  overflow: hidden;
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  z-index: 3;
+}
+.time-picker-native-wrap input[type="time"] {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  font-size: 1rem;
+  -webkit-appearance: none;
+}
+.time-picker-native-wrap input[type="time"]::-webkit-calendar-picker-indicator {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  margin: 0; padding: 0; opacity: 0; cursor: pointer;
+}
+
+.swap-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+@media (min-width: 640px) { .swap-divider { padding-top: 20px; } }
+
+.swap-btn {
+  width: 32px; height: 32px; min-height: 32px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--bg-input);
+  border: 1px solid var(--border-subtle);
+  border-radius: 50%;
+  cursor: pointer;
+  color: var(--text-muted);
+  transition: all 0.18s var(--transition);
+  -webkit-tap-highlight-color: transparent;
+  flex-shrink: 0;
+}
+.swap-btn:hover { border-color: var(--border-gold); color: var(--gold); background: var(--gold-glow); }
+.swap-btn:active { transform: rotate(180deg) scale(0.95); }
+
+.time-error-msg {
+  font-size: 0.65rem;
+  color: var(--red);
+  margin-left: 2px;
+  margin-top: 2px;
+  min-height: 14px;
+  font-family: var(--font-mono);
+}
+
+/* QUICK PILLS */
+.quick-pills { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.quick-pill-label {
+  font-size: 0.62rem;
+  color: var(--text-muted);
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  flex-shrink: 0;
+  margin-right: 2px;
+}
+.quick-pill {
+  min-height: 28px;
+  padding: 0 9px;
+  border-radius: 99px;
+  background: var(--bg-pill);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s var(--transition);
+  -webkit-tap-highlight-color: transparent;
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+}
+.quick-pill:hover { border-color: var(--border-gold); color: var(--gold); background: var(--gold-glow); }
+.quick-pill:active { transform: scale(0.95); }
+.quick-pill.now-pill { color: var(--green); border-color: rgba(76,175,128,0.25); background: var(--green-muted); }
+.quick-pill.now-pill:hover { background: rgba(76,175,128,0.25); border-color: rgba(76,175,128,0.5); }
+
+/* TOOLBAR */
+.jump-toolbar { display: flex; gap: 8px; margin-bottom: 28px; flex-wrap: wrap; }
+
+/* ═══════════════════════════════════════════════════════════════
+   SESSION LOG
+═══════════════════════════════════════════════════════════════ */
+.session-log-section { margin-top: 32px; }
+.session-log-controls { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+
+.session-title-input {
+  flex: 1;
+  min-width: 140px;
+  min-height: 44px;
+  background: var(--bg-input);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 0 14px;
+  font-family: var(--font-ui);
+  font-size: 0.875rem;
+  color: var(--text-primary);
+  outline: none;
+  transition: border-color 0.2s var(--transition), box-shadow 0.2s var(--transition);
+}
+.session-title-input::placeholder { color: var(--text-muted); }
+.session-title-input:focus { border-color: var(--border-gold-mid); box-shadow: 0 0 0 3px var(--gold-glow); }
+
+.log-empty {
+  text-align: center;
+  padding: 32px 16px;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  border: 1px dashed var(--border-subtle);
+  border-radius: var(--radius-lg);
+  font-style: italic;
+}
+
+.log-entries { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+
+.log-entry {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  transition: border-color 0.2s;
+  animation: slideIn 0.2s var(--transition) both;
+}
+.log-entry:hover { border-color: var(--border-gold); }
+.log-entry-body { flex: 1; min-width: 0; }
+.log-entry-title { font-size: 0.82rem; font-weight: 600; color: var(--text-primary); margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.log-entry-chain { font-family: var(--font-mono); font-size: 0.68rem; color: var(--text-muted); word-break: break-all; line-height: 1.6; font-variant-numeric: tabular-nums; }
+.log-entry-meta { display: flex; align-items: center; gap: 8px; margin-top: 5px; flex-wrap: wrap; }
+.log-entry-duration { font-family: var(--font-mono); font-size: 0.8rem; font-weight: 600; color: var(--gold); font-variant-numeric: tabular-nums; }
+.log-entry-decimal { font-family: var(--font-mono); font-size: 0.72rem; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+.log-entry-time { font-size: 0.65rem; color: var(--text-muted); margin-left: auto; white-space: nowrap; }
+
+.log-footer {
+  background: var(--bg-card);
+  border: 1px solid var(--border-gold);
+  border-radius: var(--radius-lg);
+  padding: 16px 18px;
+  box-shadow: 0 0 24px rgba(212,175,55,0.07);
+}
+.log-footer-top { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
+.log-footer-label { font-size: 0.65rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); }
+.log-footer-total { font-family: var(--font-mono); font-size: 1.5rem; font-weight: 600; color: var(--gold); font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+.log-footer-decimal { font-family: var(--font-mono); font-size: 0.85rem; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+.log-footer-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* ═══════════════════════════════════════════════════════════════
+   TOAST
+═══════════════════════════════════════════════════════════════ */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(80px);
+  background: var(--bg-card);
+  border: 1px solid var(--border-gold-mid);
+  border-radius: var(--radius-md);
+  padding: 10px 18px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--gold);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5), 0 0 20px rgba(212,175,55,0.15);
+  z-index: 9999;
+  transition: transform 0.3s var(--transition), opacity 0.3s var(--transition);
+  opacity: 0;
+  pointer-events: none;
+  white-space: nowrap;
+}
+.toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+/* ═══════════════════════════════════════════════════════════════
+   MISC
+═══════════════════════════════════════════════════════════════ */
+.divider { height: 1px; background: var(--border-subtle); margin: 28px 0; }
+
+.app-footer {
+  text-align: center;
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  letter-spacing: 0.06em;
+  margin-top: 40px;
+  padding-bottom: 20px;
+}
+
+*:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; border-radius: 4px; }
+
+@media print {
+  body { background: #fff; color: #000; }
+  .hero-card, .jump-card, .log-entry { border: 1px solid #ccc; }
+  .btn, .quick-pill, .swap-btn { display: none; }
+}
+</style>
+</head>
+<body>
+
+<div class="app-wrapper">
+
+  <!-- EN-TÊTE -->
+  <header class="app-header">
+    <div class="logo-mark">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="12" cy="12" r="8.5" stroke="#D4AF37" stroke-width="1.5"/>
+          <path d="M12 7.5V12.5L15 15" stroke="#D4AF37" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M6.5 3.5L4 1" stroke="#D4AF37" stroke-width="1.2" stroke-linecap="round"/>
+          <path d="M17.5 3.5L20 1" stroke="#D4AF37" stroke-width="1.2" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="logo-text">
+        <span class="logo-title">ChronoGold</span>
+        <span class="logo-subtitle">Calculateur Multi-Saut</span>
+      </div>
+    </div>
+    <div class="header-time" id="live-clock">—</div>
+  </header>
+
+  <!-- RÉSUMÉ PRINCIPAL -->
+  <div class="hero-card" role="region" aria-label="Résumé de la durée totale">
+    <div class="hero-primary">
+      <div class="hero-duration" id="hero-duration" aria-live="polite" aria-atomic="true">0h00</div>
+      <div class="hero-label-block">
+        <div class="hero-label">Total combiné</div>
+        <div class="hero-sublabel" id="hero-sublabel">0 saut actif</div>
+      </div>
+    </div>
+
+    <div class="hero-metrics">
+      <div class="metric-pill">
+        <span class="metric-value" id="metric-decimal">0,00</span>
+        <span class="metric-label">Heures déc.</span>
+      </div>
+      <div class="metric-pill">
+        <span class="metric-value" id="metric-minutes">0</span>
+        <span class="metric-label">Min. total</span>
+      </div>
+      <div class="metric-pill">
+        <span class="metric-value" id="metric-jumps">0</span>
+        <span class="metric-label">Sauts actifs</span>
+      </div>
+      <div class="metric-pill">
+        <span class="metric-value" id="metric-gap">—</span>
+        <span class="metric-label">Écart sauté</span>
+      </div>
+    </div>
+
+    <div class="hero-actions">
+      <button class="btn btn-gold" id="btn-copy-result" aria-label="Copier le résultat dans le presse-papiers">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        Copier le résultat
+      </button>
+    </div>
+  </div>
+
+  <!-- SAUTS -->
+  <div class="section-label">Sauts de temps</div>
+  <div class="jumps-container" id="jumps-container" role="list" aria-label="Intervalles de temps"></div>
+
+  <!-- BARRE D'OUTILS -->
+  <div class="jump-toolbar">
+    <button class="btn btn-outline-gold" id="btn-add-jump" aria-label="Ajouter un nouveau saut">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Ajouter un saut
+    </button>
+    <button class="btn btn-ghost" id="btn-reset-jumps" aria-label="Réinitialiser tous les sauts">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.95"/></svg>
+      Réinitialiser
+    </button>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- JOURNAL DE SESSION -->
+  <div class="session-log-section" role="region" aria-label="Journal de session">
+    <div class="section-label">Journal de session</div>
+
+    <div class="session-log-controls">
+      <input
+        type="text"
+        class="session-title-input"
+        id="session-title"
+        placeholder="Titre de session (ex. Sprint client)"
+        maxlength="80"
+        aria-label="Titre de la session"
+      />
+      <button class="btn btn-outline-gold" id="btn-log-session" aria-label="Enregistrer la session courante">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        Enregistrer
+      </button>
+    </div>
+
+    <div id="log-entries-wrap"></div>
+
+    <div class="log-footer" id="log-footer" style="display:none;" role="complementary" aria-label="Total général">
+      <div class="log-footer-top">
+        <span class="log-footer-label">Total général</span>
+        <span class="log-footer-total" id="grand-total-display">0h00</span>
+        <span class="log-footer-decimal" id="grand-total-decimal">0,00 h</span>
+      </div>
+      <div class="log-footer-actions">
+        <button class="btn btn-outline-gold btn-sm" id="btn-copy-summary">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copier le résumé
+        </button>
+        <button class="btn btn-danger btn-sm" id="btn-clear-log">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+          Tout effacer
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <footer class="app-footer">
+    ChronoGold · Zéro dépendance · Données stockées localement · &copy; 2026
+  </footer>
+
+</div>
+
+<!-- NOTIFICATION -->
+<div class="toast" id="toast" role="alert" aria-live="assertive"></div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   ChronoGold FR — Moteur applicatif
+   Version : 1.0.0
+═══════════════════════════════════════════════════════════════ */
+
+'use strict';
+
+/* ───────────── ÉTAT ───────────── */
+let jumps = [];
+let sessionLog = [];
+let jumpIdCounter = 0;
+
+/* ───────────── UTILITAIRES ───────────── */
+
+function uid() { return ++jumpIdCounter; }
+
+/** Analyse une chaîne de temps naturelle → minutes depuis minuit (0–1439), ou null */
+function parseTime(raw) {
+  if (!raw || !raw.trim()) return null;
+  const s = raw.trim().toLowerCase()
+    .replace(/,/g, '.')   // virgule décimale tolérée
+    .replace(/\s+/g, '');
+
+  // Format 12h AM/PM : "1:00pm", "2:00PM", "1pm", "12:30am"
+  const ampm = s.match(/^(\d{1,2})(?::(\d{2}))?(?:\s*)?(am|pm)$/);
+  if (ampm) {
+    let h = parseInt(ampm[1], 10);
+    const m = parseInt(ampm[2] || '0', 10);
+    const period = ampm[3];
+    if (h < 1 || h > 12 || m < 0 || m > 59) return null;
+    if (period === 'am' && h === 12) h = 0;
+    if (period === 'pm' && h !== 12) h += 12;
+    return h * 60 + m;
+  }
+
+  // Format français : "12h00", "9h5", "13h", "9H30"
+  const french = s.match(/^(\d{1,2})h(\d{1,2})?$/);
+  if (french) {
+    const h = parseInt(french[1], 10);
+    const m = french[2] !== undefined ? parseInt(french[2], 10) : 0;
+    if (h < 0 || h > 23 || m < 0 || m > 59) return null;
+    return h * 60 + m;
+  }
+
+  // Format deux-points : "12:00", "9:30"
+  const colon = s.match(/^(\d{1,2}):(\d{2})$/);
+  if (colon) {
+    const h = parseInt(colon[1], 10);
+    const m = parseInt(colon[2], 10);
+    if (h < 0 || h > 23 || m < 0 || m > 59) return null;
+    return h * 60 + m;
+  }
+
+  // Format compact 4 chiffres : "1200", "0930"
+  const compact4 = s.match(/^(\d{4})$/);
+  if (compact4) {
+    const h = parseInt(s.slice(0, 2), 10);
+    const m = parseInt(s.slice(2), 10);
+    if (h < 0 || h > 23 || m < 0 || m > 59) return null;
+    return h * 60 + m;
+  }
+
+  // Format compact 3 chiffres : "930" → 09:30
+  const compact3 = s.match(/^(\d{3})$/);
+  if (compact3) {
+    const h = parseInt(s.slice(0, 1), 10);
+    const m = parseInt(s.slice(1), 10);
+    if (h < 0 || h > 23 || m < 0 || m > 59) return null;
+    return h * 60 + m;
+  }
+
+  // Heure seule (0–23)
+  const bareHour = s.match(/^(\d{1,2})$/);
+  if (bareHour) {
+    const h = parseInt(bareHour[1], 10);
+    if (h < 0 || h > 23) return null;
+    return h * 60;
+  }
+
+  return null;
+}
+
+/** Formate des minutes totales → "12h00" */
+function fmtTime(totalMin) {
+  if (totalMin === null || isNaN(totalMin)) return '—';
+  const t = ((totalMin % 1440) + 1440) % 1440;
+  const h = Math.floor(t / 60);
+  const m = t % 60;
+  return `${h}h${String(m).padStart(2, '0')}`;
+}
+
+/** Formate une durée en minutes → "1h30" */
+function fmtDuration(mins) {
+  if (mins === null || isNaN(mins)) return '—';
+  const h = Math.floor(Math.abs(mins) / 60);
+  const m = Math.abs(mins) % 60;
+  return `${h}h${String(m).padStart(2, '0')}`;
+}
+
+/** Formate des minutes → "HH:MM" pour l'input natif */
+function fmtTimeNative(totalMin) {
+  if (totalMin === null) return '';
+  const t = ((totalMin % 1440) + 1440) % 1440;
+  const h = Math.floor(t / 60);
+  const m = t % 60;
+  return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+}
+
+/** Durée d'un saut en minutes (gère le passage minuit) */
+function jumpDuration(startMin, endMin) {
+  if (startMin === null || endMin === null) return null;
+  let d = endMin - startMin;
+  if (d < 0) d += 1440;
+  return d;
+}
+
+/** Détecte un saut nocturne */
+function isOvernight(startMin, endMin) {
+  if (startMin === null || endMin === null) return false;
+  return endMin < startMin;
+}
+
+/** Heure courante en minutes depuis minuit */
+function nowMinutes() {
+  const now = new Date();
+  return now.getHours() * 60 + now.getMinutes();
+}
+
+/** Formate l'horloge locale */
+function formatClock(d) {
+  return d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+}
+
+/** Heures décimales, 2 décimales, format français */
+function toDecimal(mins) {
+  return (mins / 60).toFixed(2).replace('.', ',');
+}
+
+/** Pluriel français simple */
+function plFr(n, singular, plural) {
+  return `${n} ${n > 1 ? plural : singular}`;
+}
+
+/** Ajoute des minutes avec bouclage sur 24h */
+function addMins(base, delta) {
+  return ((base + delta) % 1440 + 1440) % 1440;
+}
+
+/* ───────────── TOAST ───────────── */
+let toastTimer = null;
+function showToast(msg, duration = 2200) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), duration);
+}
+
+/* ───────────── GESTION DES SAUTS ───────────── */
+
+function createJump(startMin, endMin, note = '') {
+  return { id: uid(), startMin, endMin, note, startRaw: fmtTime(startMin), endRaw: fmtTime(endMin) };
+}
+
+function getDefaultJumps() {
+  return [
+    createJump(12 * 60, 13 * 60, 'Bloc matinal'),
+    createJump(13 * 60 + 30, 14 * 60, ''),
+  ];
+}
+
+function computeSummary() {
+  let totalMins = 0;
+  let validCount = 0;
+  let totalGap = 0;
+  let hasGap = false;
+
+  const parsed = jumps.map(j => ({
+    start: parseTime(j.startRaw),
+    end: parseTime(j.endRaw),
+    j
+  }));
+
+  parsed.forEach(({ start, end }, i) => {
+    const dur = jumpDuration(start, end);
+    if (dur !== null) { totalMins += dur; validCount++; }
+
+    if (i < parsed.length - 1) {
+      const nextStart = parsed[i + 1].start;
+      if (end !== null && nextStart !== null) {
+        let gap = nextStart - end;
+        if (gap < 0) gap += 1440;
+        totalGap += gap;
+        hasGap = true;
+      }
+    }
+  });
+
+  return { totalMins, validCount, totalGap, hasGap };
+}
+
+/* ───────────── RENDU ───────────── */
+
+function renderAll() {
+  renderJumps();
+  renderHero();
+}
+
+function renderHero() {
+  const { totalMins, validCount, totalGap, hasGap } = computeSummary();
+
+  const heroDur       = document.getElementById('hero-duration');
+  const heroSub       = document.getElementById('hero-sublabel');
+  const metricDecimal = document.getElementById('metric-decimal');
+  const metricMinutes = document.getElementById('metric-minutes');
+  const metricJumps   = document.getElementById('metric-jumps');
+  const metricGap     = document.getElementById('metric-gap');
+
+  if (validCount === 0) {
+    heroDur.textContent = '—';
+    heroDur.classList.add('invalid');
+    heroSub.textContent = 'Aucun saut valide';
+    metricDecimal.textContent = '—';
+    metricMinutes.textContent = '—';
+    metricJumps.textContent = '0';
+    metricGap.textContent = '—';
+    return;
+  }
+
+  heroDur.textContent = fmtDuration(totalMins);
+  heroDur.classList.remove('invalid');
+  heroSub.textContent = plFr(validCount, 'saut actif', 'sauts actifs');
+  metricDecimal.textContent = toDecimal(totalMins) + ' h';
+  metricMinutes.textContent = totalMins + ' min';
+  metricJumps.textContent = validCount;
+  metricGap.textContent = hasGap ? fmtDuration(totalGap) : '—';
+}
+
+function renderJumps() {
+  const container = document.getElementById('jumps-container');
+  container.innerHTML = '';
+  jumps.forEach((jump, idx) => {
+    if (idx > 0) container.appendChild(createGapConnector(idx - 1));
+    container.appendChild(createJumpCard(jump, idx));
+  });
+}
+
+function createGapConnector(prevIdx) {
+  const prevJump = jumps[prevIdx];
+  const nextJump = jumps[prevIdx + 1];
+  const prevEnd   = parseTime(prevJump.endRaw);
+  const nextStart = parseTime(nextJump.startRaw);
+
+  let gapText = 'écart';
+  let hasGap = false;
+
+  if (prevEnd !== null && nextStart !== null) {
+    let gap = nextStart - prevEnd;
+    if (gap < 0) gap += 1440;
+    gapText = `${fmtDuration(gap)} d'écart sauté`;
+    hasGap = gap > 0;
+  }
+
+  const div = document.createElement('div');
+  div.className = 'gap-connector';
+  div.innerHTML = `<span class="gap-badge${hasGap ? ' has-gap' : ''}">${gapText}</span>`;
+  return div;
+}
+
+function createJumpCard(jump, idx) {
+  const startMin  = parseTime(jump.startRaw);
+  const endMin    = parseTime(jump.endRaw);
+  const dur       = jumpDuration(startMin, endMin);
+  const overnight = isOvernight(startMin, endMin);
+  const isValid   = dur !== null;
+
+  let pillClass = 'jump-duration-pill';
+  if (!isValid) pillClass += ' invalid';
+  else if (overnight) pillClass += ' overnight';
+
+  const overnightBadge = overnight ? `<span class="overnight-badge">+1j</span>` : '';
+
+  const removeBtn = jumps.length > 1
+    ? `<button class="btn btn-icon btn-danger btn-sm jump-remove-btn" data-action="remove" data-id="${jump.id}" aria-label="Supprimer le saut ${idx + 1}" title="Supprimer">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+       </button>`
+    : '';
+
+  const card = document.createElement('div');
+  card.className = 'jump-card';
+  card.setAttribute('role', 'listitem');
+  card.dataset.id = jump.id;
+
+  card.innerHTML = `
+    <div class="jump-header">
+      <span class="jump-index-badge">#${idx + 1}</span>
+      <input
+        type="text"
+        class="jump-note-input"
+        placeholder="Ajouter une note…"
+        value="${escHtml(jump.note)}"
+        data-action="note"
+        data-id="${jump.id}"
+        aria-label="Note du saut ${idx + 1}"
+        maxlength="60"
+      />
+      <span class="${pillClass}" id="dur-pill-${jump.id}">${isValid ? fmtDuration(dur) : '—'}</span>
+      ${overnightBadge}
+      ${removeBtn}
+    </div>
+
+    <div class="time-row">
+      <div class="time-field">
+        <label class="time-field-label" for="start-${jump.id}">Début</label>
+        <div class="time-input-wrap">
+          <input
+            type="text"
+            class="time-input${startMin === null && jump.startRaw ? ' error' : (startMin !== null ? ' valid' : '')}"
+            id="start-${jump.id}"
+            value="${escHtml(jump.startRaw)}"
+            placeholder="12h00"
+            autocomplete="off"
+            inputmode="text"
+            data-field="start"
+            data-id="${jump.id}"
+            aria-label="Heure de début du saut ${idx + 1}"
+          />
+          <div class="time-picker-btn" aria-hidden="true">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </div>
+          <div class="time-picker-native-wrap" aria-hidden="true">
+            <input type="time" tabindex="-1" data-native-field="start" data-id="${jump.id}" value="${fmtTimeNative(startMin)}" />
+          </div>
+        </div>
+        <div class="time-error-msg" id="start-err-${jump.id}">
+          ${startMin === null && jump.startRaw ? 'Format non reconnu' : ''}
+        </div>
+      </div>
+
+      <div class="swap-divider">
+        <button class="swap-btn" data-action="swap" data-id="${jump.id}" title="Inverser début/fin" aria-label="Inverser les heures de début et de fin">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+        </button>
+      </div>
+
+      <div class="time-field">
+        <label class="time-field-label" for="end-${jump.id}">Fin</label>
+        <div class="time-input-wrap">
+          <input
+            type="text"
+            class="time-input${endMin === null && jump.endRaw ? ' error' : (endMin !== null ? ' valid' : '')}"
+            id="end-${jump.id}"
+            value="${escHtml(jump.endRaw)}"
+            placeholder="13h00"
+            autocomplete="off"
+            inputmode="text"
+            data-field="end"
+            data-id="${jump.id}"
+            aria-label="Heure de fin du saut ${idx + 1}"
+          />
+          <div class="time-picker-btn" aria-hidden="true">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </div>
+          <div class="time-picker-native-wrap" aria-hidden="true">
+            <input type="time" tabindex="-1" data-native-field="end" data-id="${jump.id}" value="${fmtTimeNative(endMin)}" />
+          </div>
+        </div>
+        <div class="time-error-msg" id="end-err-${jump.id}">
+          ${endMin === null && jump.endRaw ? 'Format non reconnu' : ''}
+        </div>
+      </div>
+    </div>
+
+    <div class="quick-pills">
+      <span class="quick-pill-label">Rapide&nbsp;:</span>
+      <button class="quick-pill now-pill" data-action="now" data-id="${jump.id}" aria-label="Mettre l'heure de fin à maintenant">Maintenant</button>
+      <button class="quick-pill" data-action="increment" data-id="${jump.id}" data-delta="15" aria-label="Ajouter 15 minutes à l'heure de fin">+15 min</button>
+      <button class="quick-pill" data-action="increment" data-id="${jump.id}" data-delta="30" aria-label="Ajouter 30 minutes à l'heure de fin">+30 min</button>
+      <button class="quick-pill" data-action="increment" data-id="${jump.id}" data-delta="60" aria-label="Ajouter 1 heure à l'heure de fin">+1 h</button>
+    </div>
+  `;
+  return card;
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+/* ───────────── DÉLÉGATION D'ÉVÉNEMENTS ───────────── */
+
+document.getElementById('jumps-container').addEventListener('input',  handleJumpsInput);
+document.getElementById('jumps-container').addEventListener('change', handleJumpsChange);
+document.getElementById('jumps-container').addEventListener('blur',   handleJumpsBlur, true);
+document.getElementById('jumps-container').addEventListener('click',  handleJumpsClick);
+
+function findJump(id) { return jumps.find(j => String(j.id) === String(id)); }
+
+function handleJumpsInput(e) {
+  const el = e.target;
+  if (el.dataset.field && el.dataset.id) {
+    const jump = findJump(el.dataset.id);
+    if (!jump) return;
+    if (el.dataset.field === 'start') jump.startRaw = el.value;
+    else jump.endRaw = el.value;
+
+    const mins = parseTime(el.value);
+    el.classList.toggle('error', mins === null && el.value.trim() !== '');
+    el.classList.toggle('valid', mins !== null);
+
+    const errId = `${el.dataset.field}-err-${jump.id}`;
+    const errEl = document.getElementById(errId);
+    if (errEl) errEl.textContent = (mins === null && el.value.trim() !== '') ? 'Format non reconnu' : '';
+
+    updateDurationPill(jump);
+    updateGapConnectors();
+    renderHero();
+  }
+  if (el.dataset.action === 'note' && el.dataset.id) {
+    const jump = findJump(el.dataset.id);
+    if (jump) jump.note = el.value;
+  }
+}
+
+function handleJumpsChange(e) {
+  const el = e.target;
+  if (el.dataset.nativeField && el.dataset.id) {
+    const jump = findJump(el.dataset.id);
+    if (!jump || !el.value) return;
+    const [h, m] = el.value.split(':').map(Number);
+    const totalMin = h * 60 + m;
+    const formatted = fmtTime(totalMin);
+    if (el.dataset.nativeField === 'start') jump.startRaw = formatted;
+    else jump.endRaw = formatted;
+    const textInput = document.getElementById(`${el.dataset.nativeField}-${jump.id}`);
+    if (textInput) { textInput.value = formatted; textInput.classList.remove('error'); textInput.classList.add('valid'); }
+    updateDurationPill(jump);
+    updateGapConnectors();
+    renderHero();
+  }
+}
+
+function handleJumpsBlur(e) {
+  const el = e.target;
+  if (el.dataset.field && el.dataset.id) {
+    const jump = findJump(el.dataset.id);
+    if (!jump) return;
+    const raw = el.value.trim();
+    if (!raw) return;
+    const mins = parseTime(raw);
+    if (mins !== null) {
+      const normalized = fmtTime(mins);
+      el.value = normalized;
+      if (el.dataset.field === 'start') jump.startRaw = normalized;
+      else jump.endRaw = normalized;
+      const nativeInput = el.closest('.time-input-wrap')?.parentElement?.querySelector('input[type="time"]');
+      if (nativeInput) nativeInput.value = fmtTimeNative(mins);
+    }
+    updateDurationPill(jump);
+    updateGapConnectors();
+    renderHero();
+  }
+}
+
+function handleJumpsClick(e) {
+  const btn = e.target.closest('[data-action]');
+  if (!btn) return;
+  const action = btn.dataset.action;
+  const id     = btn.dataset.id;
+  const jump   = findJump(id);
+
+  if (action === 'remove') { removeJump(id); return; }
+  if (!jump) return;
+
+  if (action === 'swap') {
+    const tmp = jump.startRaw; jump.startRaw = jump.endRaw; jump.endRaw = tmp;
+    renderAll(); return;
+  }
+  if (action === 'now') {
+    jump.endRaw = fmtTime(nowMinutes());
+    renderAll(); return;
+  }
+  if (action === 'increment') {
+    const delta  = parseInt(btn.dataset.delta, 10);
+    const endMin = parseTime(jump.endRaw);
+    const base   = endMin !== null ? endMin : nowMinutes();
+    jump.endRaw  = fmtTime(addMins(base, delta));
+    renderAll(); return;
+  }
+}
+
+function updateDurationPill(jump) {
+  const pill = document.getElementById(`dur-pill-${jump.id}`);
+  if (!pill) return;
+  const startMin  = parseTime(jump.startRaw);
+  const endMin    = parseTime(jump.endRaw);
+  const dur       = jumpDuration(startMin, endMin);
+  const overnight = isOvernight(startMin, endMin);
+  pill.className = 'jump-duration-pill' + (dur === null ? ' invalid' : overnight ? ' overnight' : '');
+  pill.textContent = dur !== null ? fmtDuration(dur) : '—';
+}
+
+function updateGapConnectors() {
+  const badges = document.querySelectorAll('#jumps-container .gap-badge');
+  badges.forEach((badge, i) => {
+    const prev = jumps[i]; const next = jumps[i + 1];
+    if (!prev || !next) return;
+    const prevEnd   = parseTime(prev.endRaw);
+    const nextStart = parseTime(next.startRaw);
+    if (prevEnd !== null && nextStart !== null) {
+      let gap = nextStart - prevEnd;
+      if (gap < 0) gap += 1440;
+      badge.textContent = `${fmtDuration(gap)} d'écart sauté`;
+      badge.classList.toggle('has-gap', gap > 0);
+    } else {
+      badge.textContent = 'écart'; badge.classList.remove('has-gap');
+    }
+  });
+}
+
+/* ───────────── AJOUTER / SUPPRIMER ───────────── */
+
+document.getElementById('btn-add-jump').addEventListener('click', addJump);
+document.getElementById('btn-reset-jumps').addEventListener('click', resetJumps);
+
+function addJump() {
+  let startMin = 9 * 60, endMin = 10 * 60;
+  if (jumps.length > 0) {
+    const lastEnd = parseTime(jumps[jumps.length - 1].endRaw);
+    if (lastEnd !== null) { startMin = addMins(lastEnd, 30); endMin = addMins(startMin, 60); }
+  }
+  jumps.push(createJump(startMin, endMin));
+  renderAll();
+  const lastCard = document.querySelector('.jump-card:last-child');
+  if (lastCard) {
+    const inp = lastCard.querySelector('.time-input[data-field="start"]');
+    if (inp) requestAnimationFrame(() => inp.focus());
+  }
+}
+
+function removeJump(id) {
+  jumps = jumps.filter(j => String(j.id) !== String(id));
+  renderAll();
+}
+
+function resetJumps() {
+  jumps = getDefaultJumps();
+  renderAll();
+  showToast('↺ Sauts réinitialisés');
+}
+
+/* ───────────── COPIER LE RÉSULTAT ───────────── */
+
+document.getElementById('btn-copy-result').addEventListener('click', async () => {
+  const { totalMins, validCount } = computeSummary();
+  if (validCount === 0) { showToast('Aucun saut valide à copier'); return; }
+  const chain = jumps
+    .filter(j => parseTime(j.startRaw) !== null && parseTime(j.endRaw) !== null)
+    .map(j => `${j.startRaw}→${j.endRaw}`)
+    .join(' + ');
+  const text = `${fmtDuration(totalMins)} (${toDecimal(totalMins)} h / ${totalMins} min) — ${chain}`;
+  await copyToClipboard(text);
+  showToast('✓ Copié dans le presse-papiers');
+});
+
+async function copyToClipboard(text) {
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(text);
+    } else {
+      const ta = document.createElement('textarea');
+      ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      document.execCommand('copy'); document.body.removeChild(ta);
+    }
+  } catch (err) { console.warn('Presse-papiers indisponible :', err); }
+}
+
+/* ───────────── JOURNAL DE SESSION ───────────── */
+
+document.getElementById('btn-log-session').addEventListener('click', logSession);
+document.getElementById('btn-copy-summary').addEventListener('click', copySummary);
+document.getElementById('btn-clear-log').addEventListener('click', clearLog);
+
+function logSession() {
+  const { totalMins, validCount } = computeSummary();
+  if (validCount === 0) { showToast('⚠ Ajoutez au moins un saut valide'); return; }
+
+  const title = document.getElementById('session-title').value.trim() || 'Session sans titre';
+  const chain = jumps
+    .filter(j => parseTime(j.startRaw) !== null && parseTime(j.endRaw) !== null)
+    .map(j => `${j.startRaw}→${j.endRaw}${j.note ? ` (${j.note})` : ''}`)
+    .join(' + ');
+
+  sessionLog.push({ id: Date.now(), title, chain, jumpsCount: validCount, totalMins, timestamp: new Date().toISOString() });
+  saveLog(); renderLog();
+  showToast(`✓ Enregistré : ${fmtDuration(totalMins)}`);
+  document.getElementById('session-title').value = '';
+}
+
+function saveLog() {
+  try { localStorage.setItem('chronogold_fr_log', JSON.stringify(sessionLog)); }
+  catch (e) { console.warn('localStorage indisponible :', e); }
+}
+
+function loadLog() {
+  try {
+    const raw = localStorage.getItem('chronogold_fr_log');
+    if (raw) sessionLog = JSON.parse(raw);
+  } catch (e) { sessionLog = []; }
+}
+
+function renderLog() {
+  const wrap   = document.getElementById('log-entries-wrap');
+  const footer = document.getElementById('log-footer');
+
+  if (sessionLog.length === 0) {
+    wrap.innerHTML = '<div class="log-empty">Aucune session enregistrée. Ajoutez des sauts et cliquez sur <strong>Enregistrer</strong> pour commencer.</div>';
+    footer.style.display = 'none';
+    return;
+  }
+
+  const entriesDiv = document.createElement('div');
+  entriesDiv.className = 'log-entries';
+
+  sessionLog.forEach(entry => {
+    const el = document.createElement('div');
+    el.className = 'log-entry';
+    el.dataset.logId = entry.id;
+
+    const ts = new Date(entry.timestamp);
+    const timeStr = ts.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })
+      + ' ' + ts.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+
+    el.innerHTML = `
+      <div class="log-entry-body">
+        <div class="log-entry-title">${escHtml(entry.title)}</div>
+        <div class="log-entry-chain">${escHtml(entry.chain)}</div>
+        <div class="log-entry-meta">
+          <span class="log-entry-duration">${fmtDuration(entry.totalMins)}</span>
+          <span class="log-entry-decimal">${toDecimal(entry.totalMins)} h · ${plFr(entry.jumpsCount, 'saut', 'sauts')}</span>
+          <span class="log-entry-time">${timeStr}</span>
+        </div>
+      </div>
+      <button class="btn btn-icon btn-danger btn-sm" data-log-action="delete" data-log-id="${entry.id}" aria-label="Supprimer cette entrée">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    `;
+    entriesDiv.appendChild(el);
+  });
+
+  wrap.innerHTML = '';
+  wrap.appendChild(entriesDiv);
+
+  const grandTotal = sessionLog.reduce((acc, e) => acc + e.totalMins, 0);
+  document.getElementById('grand-total-display').textContent = fmtDuration(grandTotal);
+  document.getElementById('grand-total-decimal').textContent = `${toDecimal(grandTotal)} h`;
+  footer.style.display = 'block';
+
+  wrap.querySelectorAll('[data-log-action="delete"]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      sessionLog = sessionLog.filter(e => e.id !== Number(btn.dataset.logId));
+      saveLog(); renderLog();
+    });
+  });
+}
+
+async function copySummary() {
+  if (sessionLog.length === 0) return;
+  const grandTotal = sessionLog.reduce((acc, e) => acc + e.totalMins, 0);
+  const lines = [
+    '# ChronoGold — Résumé de session',
+    '',
+    ...sessionLog.map((e, i) =>
+      `${i + 1}. **${e.title}** — ${fmtDuration(e.totalMins)} (${toDecimal(e.totalMins)} h)\n   ${e.chain}`
+    ),
+    '',
+    `**Total général : ${fmtDuration(grandTotal)} (${toDecimal(grandTotal)} h)**`,
+  ];
+  await copyToClipboard(lines.join('\n'));
+  showToast('✓ Résumé copié en Markdown');
+}
+
+function clearLog() {
+  if (!confirm('Effacer toutes les sessions enregistrées ? Cette action est irréversible.')) return;
+  sessionLog = []; saveLog(); renderLog();
+  showToast('Journal effacé');
+}
+
+/* ───────────── HORLOGE EN DIRECT ───────────── */
+
+function tickClock() {
+  const el = document.getElementById('live-clock');
+  if (el) el.textContent = formatClock(new Date());
+}
+tickClock();
+setInterval(tickClock, 1000);
+
+/* ───────────── INITIALISATION ───────────── */
+
+function init() { loadLog(); jumps = getDefaultJumps(); renderAll(); renderLog(); }
+init();
+</script>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js')
+        .then((reg) => console.log('ChronoGold Service Worker registered successfully:', reg.scope))
+        .catch((err) => console.log('ChronoGold Service Worker registration failed:', err));
+    });
+  }
+</script>
+</body>
+</html>
